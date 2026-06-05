@@ -6,6 +6,8 @@ import sys
 
 def main():
     """Run administrative tasks."""
+    import dotenv
+    dotenv.load_dotenv()
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ai_summarizer.settings')
     try:
         from django.core.management import execute_from_command_line
