@@ -7,6 +7,14 @@ SECRET_KEY = 'django-insecure-ai-summarizer-pro-change-in-production-xyz123'
 DEBUG = True
 ALLOWED_HOSTS = ['*']
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.onrender.com',
+]
+
+RENDER_EXTERNAL_URL = os.environ.get('RENDER_EXTERNAL_URL')
+if RENDER_EXTERNAL_URL:
+    CSRF_TRUSTED_ORIGINS.append(RENDER_EXTERNAL_URL)
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
