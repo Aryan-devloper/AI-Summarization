@@ -1,0 +1,128 @@
+{% extends 'base_app.html' %}
+{% block title %}History — AI Summarizer Pro{% endblock %}
+{% block page_title %}Summary History{% endblock %}
+
+{% block content %}
+<div class="space-y-5 animate-slide-up">
+  <!-- Search & Filter Bar -->
+  <div class="glass rounded-2xl p-4">
+    <form method="GET" class="flex flex-col sm:flex-row gap-3">
+      <div class="flex-1 relative">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <input type="text" name="q" value="{{ query }}" placeholder="Search summaries..."
+          class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 transition-all" />
+      </div>
+      <select name="type" class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 transition-all min-w-[160px]">
+        <option value="">All Types</option>
+        <option value="short" {% if summary_type_filter == 'short' %}selected{% endif %}>Short</option>
+        <option value="medium" {% if summary_type_filter == 'medium' %}selected{% endif %}>Medium</option>
+        <option value="detailed" {% if summary_type_filter == 'detailed' %}selected{% endif %}>Detailed</option>
+        <option value="bullets" {% if summary_type_filter == 'bullets' %}selected{% endif %}>Bullets</option>
+        <option value="keypoints" {% if summary_type_filter == 'keypoints' %}selected{% endif %}>Key Points</option>
+      </select>
+      <button type="submit" class="btn-primary px-5 py-2.5 rounded-xl text-sm font-semibold">Search</button>
+      {% if query or summary_type_filter %}
+      <a href="{% url 'history' %}" class="px-4 py-2.5 rounded-xl text-sm text-slate-500 hover:text-slate-900 glass transition-all text-center">Clear</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <!-- Results Info -->
+  <div class="flex items-center justify-between">
+    <p class="text-xs text-slate-500">{{ total_count }} result{{ total_count|pluralize }}</p>
+    {% if query or summary_type_filter %}<p class="text-xs text-slate-400">Filtered by: {% if query %}"{{ query }}"{% endif %}{% if summary_type_filter %} · {{ summary_type_filter }}{% endif %}</p>{% endif %}
+  </div>
+
+  <!-- Summaries List -->
+  {% if page_obj %}
+  <div class="space-y-3">
+    {% for summary in page_obj %}
+    <div class="glass rounded-2xl p-4 hover:bg-slate-50 transition-all group" id="summary-{{ summary.pk }}">
+      <div class="flex items-start gap-4">
+        <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-base flex-shrink-0">
+          {% if summary.summary_type == 'short' %}⚡{% elif summary.summary_type == 'medium' %}📋{% elif summary.summary_type == 'detailed' %}📖{% elif summary.summary_type == 'bullets' %}•{% else %}🔑{% endif %}
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-start justify-between gap-2">
+            <a href="{% url 'view_summary' summary.pk %}" class="font-semibold text-sm text-slate-800 hover:text-slate-900 transition-colors group-hover:text-slate-900 truncate block">
+              {{ summary.title|default:"Untitled Summary"|truncatechars:60 }}
+            </a>
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+              <span class="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-semibold">{{ summary.get_summary_type_display }}</span>
+              <span class="text-xs bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full">{% if summary.compression_ratio > 0 %}-{% endif %}{{ summary.compression_ratio }}%</span>
+            </div>
+          </div>
+          <p class="text-slate-500 text-xs mt-1.5 line-clamp-2">{{ summary.get_preview }}</p>
+          <div class="flex items-center gap-4 mt-2.5">
+            <span class="text-xs text-slate-400">{{ summary.created_at|date:"M d, Y · H:i" }}</span>
+            <span class="text-xs text-slate-400">{{ summary.word_count_original }} → {{ summary.word_count_summary }} words</span>
+          </div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 mt-3 pt-3 border-t border-slate-200/70">
+        <a href="{% url 'view_summary' summary.pk %}" class="text-xs text-slate-500 hover:text-blue-600 transition-colors">View</a>
+        <button onclick="copyText('{{ summary.summary|escapejs }}')" class="text-xs text-slate-500 hover:text-sky-600 transition-colors">Copy</button>
+        <button onclick="downloadSummary('{{ summary.summary|escapejs }}', '{{ summary.summary_type }}', {{ summary.pk }})" class="text-xs text-slate-500 hover:text-emerald-600 transition-colors">Download</button>
+        <button onclick="deleteSummary({{ summary.pk }})" class="text-xs text-slate-500 hover:text-rose-600 transition-colors ml-auto">Delete</button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Pagination -->
+  {% if page_obj.has_other_pages %}
+  <div class="flex items-center justify-center gap-2 pt-2">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if summary_type_filter %}&type={{ summary_type_filter }}{% endif %}"
+      class="px-3 py-1.5 rounded-lg glass text-xs text-slate-500 hover:text-slate-900 transition-colors">← Prev</a>
+    {% endif %}
+    {% for num in page_obj.paginator.page_range %}
+    {% if page_obj.number == num %}
+    <span class="px-3 py-1.5 rounded-lg btn-primary text-xs font-semibold">{{ num }}</span>
+    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+    <a href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if summary_type_filter %}&type={{ summary_type_filter }}{% endif %}"
+      class="px-3 py-1.5 rounded-lg glass text-xs text-slate-500 hover:text-slate-900 transition-colors">{{ num }}</a>
+    {% endif %}
+    {% endfor %}
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if summary_type_filter %}&type={{ summary_type_filter }}{% endif %}"
+      class="px-3 py-1.5 rounded-lg glass text-xs text-slate-500 hover:text-slate-900 transition-colors">Next →</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="glass rounded-2xl p-16 text-center">
+    <div class="text-5xl mb-4">📂</div>
+    <p class="text-slate-700 font-semibold mb-2">No summaries found</p>
+    <p class="text-slate-500 text-sm mb-6">{% if query %}No results for "{{ query }}"{% else %}You haven't created any summaries yet{% endif %}</p>
+    <a href="{% url 'summarize' %}" class="btn-primary px-6 py-2.5 rounded-xl text-sm font-semibold inline-block">Create your first summary</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => showToast('Copied!', 'success'));
+}
+function downloadSummary(text, type, id) {
+  const blob = new Blob([`Summary (${type})\n${'='.repeat(40)}\n\n${text}`], { type: 'text/plain' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `summary-${id}.txt`; a.click();
+}
+async function deleteSummary(pk) {
+  if (!confirm('Delete this summary?')) return;
+  try {
+    const res = await fetch(`/history/delete/${pk}/`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') }
+    });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('summary-' + pk).remove();
+      showToast('Deleted!', 'success');
+    }
+  } catch (e) { showToast('Error deleting.', 'error'); }
+}
+</script>
+{% endblock %}

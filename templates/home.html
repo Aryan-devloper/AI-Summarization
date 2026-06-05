@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}AI Summarizer Pro — Intelligent Text Summarization{% endblock %}
+{% block body %}
+<div class="min-h-screen bg-slate-50 text-slate-900 overflow-hidden">
+  <!-- Ambient Background -->
+  <div class="fixed inset-0 overflow-hidden pointer-events-none">
+    <div class="absolute top-[-20%] left-[-10%] w-[70vw] h-[70vw] rounded-full bg-blue-200/50 blur-[120px]"></div>
+    <div class="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-cyan-200/50 blur-[100px]"></div>
+    <div class="absolute top-[40%] left-[30%] w-[40vw] h-[40vw] rounded-full bg-emerald-200/40 blur-[100px]"></div>
+  </div>
+
+  <!-- Navbar -->
+  <nav class="relative z-10 border-b border-slate-200/80 bg-white/80 backdrop-blur-xl">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg btn-primary flex items-center justify-center text-sm font-bold shadow-lg shadow-blue-900/10">✦</div>
+        <span class="font-display font-semibold tracking-tight">AI Summarizer <span class="gradient-text">Pro</span></span>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="{% url 'login' %}" class="text-sm text-slate-600 hover:text-slate-900 transition-colors px-3 py-2">Sign In</a>
+        <a href="{% url 'register' %}" class="btn-primary text-sm font-semibold px-4 py-2 rounded-xl">Get Started Free</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pt-24 pb-16 text-center">
+    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass border-slate-200 text-xs text-slate-600 mb-8">
+      <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse-slow"></span>
+      Powered by Google Gemini 2.5 Flash
+    </div>
+    <h1 class="font-display text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight tracking-tight mb-6">
+      Summarize Any Text<br><span class="gradient-text">In Seconds</span>
+    </h1>
+    <p class="text-slate-600 text-lg sm:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
+      Transform long articles, documents, and texts into clear, concise summaries with the power of advanced AI. Five summary styles — one powerful tool.
+    </p>
+    <div class="flex flex-col sm:flex-row gap-3 justify-center">
+      <a href="{% url 'register' %}" class="btn-primary font-semibold px-8 py-3.5 rounded-2xl text-sm shadow-2xl shadow-violet-900/30">
+        Start Summarizing Free →
+      </a>
+      <a href="{% url 'login' %}" class="glass px-8 py-3.5 rounded-2xl text-sm font-semibold text-slate-700 hover:text-slate-900 transition-colors border-slate-200">
+        Sign In
+      </a>
+    </div>
+  </section>
+
+  <!-- Features Grid -->
+  <section class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-16">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {% for icon, title, desc in features %}{% endfor %}
+      <div class="glass rounded-2xl p-6 gradient-border hover:scale-[1.02] transition-all duration-300">
+        <div class="text-2xl mb-4">⚡</div>
+        <h3 class="font-display font-semibold text-base mb-2">Lightning Fast</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">Get summaries in under 3 seconds powered by Gemini 2.5 Flash — the fastest AI model.</p>
+      </div>
+      <div class="glass rounded-2xl p-6 hover:scale-[1.02] transition-all duration-300">
+        <div class="text-2xl mb-4">🎯</div>
+        <h3 class="font-display font-semibold text-base mb-2">5 Summary Types</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">Short, medium, detailed, bullet points, or key points — choose the perfect format for your needs.</p>
+      </div>
+      <div class="glass rounded-2xl p-6 hover:scale-[1.02] transition-all duration-300">
+        <div class="text-2xl mb-4">📚</div>
+        <h3 class="font-display font-semibold text-base mb-2">Full History</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">Every summary is saved. Search, filter, download, and revisit your summaries anytime.</p>
+      </div>
+      <div class="glass rounded-2xl p-6 hover:scale-[1.02] transition-all duration-300">
+        <div class="text-2xl mb-4">📊</div>
+        <h3 class="font-display font-semibold text-base mb-2">Analytics Dashboard</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">Track your usage, compression ratios, and summarization patterns over time.</p>
+      </div>
+      <div class="glass rounded-2xl p-6 hover:scale-[1.02] transition-all duration-300">
+        <div class="text-2xl mb-4">🔒</div>
+        <h3 class="font-display font-semibold text-base mb-2">Secure & Private</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">CSRF protection, secure auth, and your data is never shared with third parties.</p>
+      </div>
+      <div class="glass rounded-2xl p-6 hover:scale-[1.02] transition-all duration-300">
+        <div class="text-2xl mb-4">📱</div>
+        <h3 class="font-display font-semibold text-base mb-2">Mobile Friendly</h3>
+        <p class="text-slate-500 text-sm leading-relaxed">Fully responsive design that works beautifully on any device, anywhere.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 py-16 text-center">
+    <div class="glass rounded-3xl p-10 gradient-border">
+      <h2 class="font-display text-3xl font-bold mb-4">Ready to save hours?</h2>
+      <p class="text-slate-600 mb-8">Join thousands of users who summarize smarter with AI.</p>
+      <a href="{% url 'register' %}" class="btn-primary font-semibold px-10 py-3.5 rounded-2xl text-sm inline-block shadow-2xl shadow-violet-900/30">Create Free Account →</a>
+    </div>
+  </section>
+
+  <footer class="relative z-10 border-t border-slate-200 py-8 text-center text-slate-500 text-xs">
+    <p>© 2025 AI Summarizer Pro. Built with Django & Gemini AI.</p>
+  </footer>
+</div>
+{% endblock %}

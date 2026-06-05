@@ -1,0 +1,397 @@
+{% extends 'base_app.html' %}
+{% block title %}Summarize — AI Summarizer Pro{% endblock %}
+{% block page_title %}AI Multimodal Summarizer{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-5 animate-slide-up">
+  <!-- Input Mode Selector -->
+  <div class="glass rounded-2xl p-5">
+    <div class="flex items-center justify-between gap-4 mb-4">
+      <div>
+        <h2 class="font-display text-sm font-semibold text-slate-900">Choose Input Mode</h2>
+        <p class="text-xs text-slate-500 mt-1">Switch between text, image, and video summarization.</p>
+      </div>
+      <div class="hidden sm:flex items-center gap-2 text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-full px-3 py-1.5">
+        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        Multimodal Gemini
+      </div>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2" id="mode-selector">
+      <button type="button" data-mode="text" class="mode-btn px-3 py-2.5 rounded-xl text-xs font-semibold transition-all border border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-700 hover:bg-blue-50 active-mode">📝 Text</button>
+      <button type="button" data-mode="image" class="mode-btn px-3 py-2.5 rounded-xl text-xs font-semibold transition-all border border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-700 hover:bg-blue-50">🖼️ Image</button>
+      <button type="button" data-mode="video" class="mode-btn px-3 py-2.5 rounded-xl text-xs font-semibold transition-all border border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-700 hover:bg-blue-50">🎬 Video</button>
+    </div>
+  </div>
+
+  <!-- Type Selector -->
+  <div class="glass rounded-2xl p-5">
+    <div class="flex items-center justify-between gap-4 mb-4">
+      <div>
+        <h2 class="font-display text-sm font-semibold text-slate-900">Choose Summary Style</h2>
+        <p class="text-xs text-slate-500 mt-1">Paste text or upload a PDF, DOCX, TXT, image, or video file.</p>
+      </div>
+      <div class="hidden sm:flex items-center gap-2 text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-full px-3 py-1.5">
+        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        Smart document mode
+      </div>
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-5 gap-2" id="type-selector">
+      {% for value, label in types %}
+      <button type="button" data-type="{{ value }}"
+        class="type-btn px-3 py-2.5 rounded-xl text-xs font-semibold transition-all border border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-700 hover:bg-blue-50 {% if forloop.first %}active-type{% endif %}">
+        {% if value == 'short' %}⚡ Short{% elif value == 'medium' %}📋 Medium{% elif value == 'detailed' %}📖 Detailed{% elif value == 'bullets' %}• Bullets{% else %}🔑 Key Points{% endif %}
+      </button>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Input Area -->
+  <div class="glass rounded-2xl p-5">
+    <div id="text-input-panel">
+      <div class="flex items-center justify-between mb-3">
+        <h2 id="input-heading" class="font-display text-sm font-semibold text-slate-900">Your Text</h2>
+        <div class="flex items-center gap-3 text-xs text-slate-500">
+          <span><span id="char-count">0</span> chars</span>
+          <span>·</span>
+          <span><span id="word-count">0</span> words</span>
+          <button onclick="clearInput()" class="text-slate-500 hover:text-slate-700 transition-colors ml-1">Clear</button>
+        </div>
+      </div>
+      <div class="mb-3 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <p id="upload-title" class="text-sm font-semibold text-slate-800">Upload a document</p>
+            <p id="upload-help" class="text-xs text-slate-500 mt-1">Best for PDF, DOCX, and TXT files. Uploading a document uses extracted text automatically.</p>
+          </div>
+          <label class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-sm font-semibold text-slate-700 hover:border-blue-300 hover:text-blue-700 transition-colors cursor-pointer">
+            <span id="file-label">Choose file</span>
+            <input id="document-input" type="file" accept=".pdf,.docx,.txt" class="hidden">
+          </label>
+        </div>
+        <p id="selected-file-name" class="text-xs text-slate-500 mt-3">No file selected.</p>
+      </div>
+      <textarea id="input-text" placeholder="Paste or type your text here... (minimum 50 characters)"
+        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 resize-none transition-all min-h-[220px]"
+        rows="10" maxlength="50000"></textarea>
+    </div>
+    <div id="media-input-panel" class="hidden rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 mb-3">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <p id="media-upload-title" class="text-sm font-semibold text-slate-800">Upload an image</p>
+          <p id="media-upload-help" class="text-xs text-slate-500 mt-1">Best for image files in image mode and video files in video mode.</p>
+        </div>
+        <label class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-sm font-semibold text-slate-700 hover:border-blue-300 hover:text-blue-700 transition-colors cursor-pointer">
+          <span id="media-file-label">Choose file</span>
+          <input id="media-document-input" type="file" accept=".png,.jpg,.jpeg,.webp,.heic,.heif" class="hidden">
+        </label>
+      </div>
+      <p id="media-selected-file-name" class="text-xs text-slate-500 mt-3">No file selected.</p>
+    </div>
+    <div class="flex items-center justify-between mt-3">
+      <div class="h-1 flex-1 bg-slate-200 rounded-full overflow-hidden mr-4">
+        <div id="char-progress" class="h-full rounded-full transition-all" style="width:0%; background: linear-gradient(90deg, #3b82f6, #06b6d4);"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="mcq-btn" onclick="submitMcq()" class="px-6 py-2.5 rounded-xl text-sm font-semibold border border-slate-200 text-slate-700 bg-white hover:border-blue-300 hover:text-blue-700 transition-all flex items-center gap-2 min-w-[140px] justify-center">
+          <span id="mcq-btn-text">Create MCQ</span>
+          <svg id="mcq-btn-spinner" class="hidden w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+        </button>
+        <button id="summarize-btn" onclick="submitSummarize()" class="btn-primary px-6 py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-blue-900/10 flex items-center gap-2 min-w-[140px] justify-center">
+          <span id="btn-text">✦ Summarize</span>
+        <svg id="btn-spinner" class="hidden w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+      </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Result Area (hidden initially) -->
+  <div id="result-area" class="hidden glass rounded-2xl p-5 animate-slide-up gradient-border">
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-2">
+        <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse-slow"></div>
+        <h2 class="font-display text-sm font-semibold text-slate-900">AI Summary</h2>
+        <span id="result-type-badge" class="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-semibold"></span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="copyResult()" title="Copy" class="p-1.5 rounded-lg hover:bg-slate-100 transition-colors text-slate-500 hover:text-slate-900">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+        </button>
+        <button onclick="downloadResult()" title="Download" class="p-1.5 rounded-lg hover:bg-slate-100 transition-colors text-slate-500 hover:text-slate-900">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+        </button>
+      </div>
+    </div>
+    <!-- Stats Row -->
+    <div class="grid grid-cols-3 gap-3 mb-4">
+      <div class="bg-slate-50 rounded-xl p-3 text-center border border-slate-200">
+        <p class="font-display text-lg font-bold text-slate-900" id="stat-original">0</p>
+        <p class="text-slate-500 text-xs mt-0.5">Original Words</p>
+      </div>
+      <div class="bg-slate-50 rounded-xl p-3 text-center border border-slate-200">
+        <p class="font-display text-lg font-bold text-slate-900" id="stat-summary">0</p>
+        <p class="text-slate-500 text-xs mt-0.5">Summary Words</p>
+      </div>
+      <div class="bg-slate-50 rounded-xl p-3 text-center border border-slate-200">
+        <p class="font-display text-lg font-bold text-emerald-600" id="stat-ratio">0%</p>
+        <p class="text-slate-500 text-xs mt-0.5">Compressed</p>
+      </div>
+    </div>
+    <div id="result-text" class="text-slate-700 text-sm leading-relaxed whitespace-pre-wrap bg-slate-50 rounded-xl p-4 border border-slate-200"></div>
+    <div class="mt-3 flex items-center gap-2">
+      <a id="view-summary-link" href="#" class="text-xs text-blue-600 hover:text-blue-700 transition-colors">View in history →</a>
+    </div>
+  </div>
+
+  <div id="mcq-area" class="hidden glass rounded-2xl p-5 animate-slide-up">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h2 class="font-display text-sm font-semibold text-slate-900">MCQ Practice Set</h2>
+        <p class="text-xs text-slate-500 mt-1">Generated from the uploaded file or pasted text.</p>
+      </div>
+      <button onclick="copyMcq()" class="text-xs text-blue-600 hover:text-blue-700 font-semibold">Copy MCQ</button>
+    </div>
+    <pre id="mcq-text" class="whitespace-pre-wrap text-sm text-slate-700 bg-slate-50 border border-slate-200 rounded-xl p-4 overflow-x-auto"></pre>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const SUMMARY_TYPES = { short:'Short', medium:'Medium', detailed:'Detailed', bullets:'Bullet Points', keypoints:'Key Points' };
+let selectedType = 'short';
+let selectedMode = 'text';
+let currentSummaryId = null;
+const modeButtons = Array.from(document.querySelectorAll('.mode-btn'));
+const textInputPanel = document.getElementById('text-input-panel');
+const mediaInputPanel = document.getElementById('media-input-panel');
+const inputHeading = document.getElementById('input-heading');
+const uploadTitle = document.getElementById('upload-title');
+const uploadHelp = document.getElementById('upload-help');
+const fileLabel = document.getElementById('file-label');
+const mediaFileLabel = document.getElementById('media-file-label');
+const textDocumentInput = document.getElementById('document-input');
+const mediaDocumentInput = document.getElementById('media-document-input');
+const textSelectedFileName = document.getElementById('selected-file-name');
+const mediaSelectedFileName = document.getElementById('media-selected-file-name');
+const mcqArea = document.getElementById('mcq-area');
+const mcqText = document.getElementById('mcq-text');
+const summarizeBtn = document.getElementById('summarize-btn');
+const summarizeBtnText = document.getElementById('btn-text');
+const mcqBtn = document.getElementById('mcq-btn');
+
+function syncModeUI() {
+  modeButtons.forEach(btn => {
+    const isActive = btn.dataset.mode === selectedMode;
+    btn.classList.toggle('active-mode', isActive);
+    btn.classList.toggle('border-blue-400', isActive);
+    btn.classList.toggle('text-blue-700', isActive);
+    btn.classList.toggle('bg-blue-50', isActive);
+    btn.classList.toggle('border-slate-200', !isActive);
+    btn.classList.toggle('text-slate-500', !isActive);
+  });
+
+  const isText = selectedMode === 'text';
+  textInputPanel.classList.toggle('hidden', !isText);
+  mediaInputPanel.classList.toggle('hidden', isText);
+  mcqBtn.classList.toggle('hidden', !isText);
+
+  if (isText) {
+    summarizeBtnText.textContent = '✦ Summarize';
+    summarizeBtn.disabled = false;
+    fileLabel.textContent = 'Choose file';
+    textDocumentInput.accept = '.pdf,.docx,.txt';
+    inputHeading.textContent = 'Your Text';
+    uploadTitle.textContent = 'Upload a document';
+    uploadHelp.textContent = 'Best for PDF, DOCX, and TXT files. Uploading a document uses extracted text automatically.';
+  } else if (selectedMode === 'image') {
+    summarizeBtnText.textContent = '✦ Summarize Image';
+    mediaFileLabel.textContent = 'Choose image';
+    mediaDocumentInput.accept = '.png,.jpg,.jpeg,.webp,.heic,.heif';
+    inputHeading.textContent = 'Image Summary';
+    uploadTitle.textContent = 'Upload an image';
+    uploadHelp.textContent = 'Best for PNG, JPG, WEBP, HEIC, and HEIF images.';
+  } else {
+    summarizeBtnText.textContent = '✦ Summarize Video';
+    mediaFileLabel.textContent = 'Choose video';
+    mediaDocumentInput.accept = '.mp4,.mpeg,.mpg,.mov,.avi,.flv,.webm,.wmv,.3gp';
+    inputHeading.textContent = 'Video Summary';
+    uploadTitle.textContent = 'Upload a video';
+    uploadHelp.textContent = 'Best for MP4, MOV, AVI, WEBM, WMV, MPEG, and 3GP videos.';
+  }
+}
+
+// Type selector
+document.querySelectorAll('.type-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.type-btn').forEach(b => {
+      b.classList.remove('active-type', 'border-blue-400', 'text-blue-700', 'bg-blue-50');
+      b.classList.add('border-slate-200', 'text-slate-500');
+    });
+    btn.classList.add('active-type', 'border-blue-400', 'text-blue-700', 'bg-blue-50');
+    btn.classList.remove('border-slate-200', 'text-slate-500');
+    selectedType = btn.dataset.type;
+  });
+});
+
+modeButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    selectedMode = btn.dataset.mode;
+    syncModeUI();
+    clearInput();
+  });
+});
+
+syncModeUI();
+
+// Set first active
+document.querySelector('.type-btn').classList.add('border-blue-400', 'text-blue-700', 'bg-blue-50');
+document.querySelector('.type-btn').classList.remove('border-slate-200', 'text-slate-500');
+
+textDocumentInput.addEventListener('change', () => {
+  const file = textDocumentInput.files[0];
+  textSelectedFileName.textContent = file ? file.name : 'No file selected.';
+});
+
+mediaDocumentInput.addEventListener('change', () => {
+  const file = mediaDocumentInput.files[0];
+  mediaSelectedFileName.textContent = file ? file.name : 'No file selected.';
+});
+
+// Counters
+const inputEl = document.getElementById('input-text');
+inputEl.addEventListener('input', () => {
+  const v = inputEl.value;
+  document.getElementById('char-count').textContent = v.length;
+  document.getElementById('word-count').textContent = v.trim() ? v.trim().split(/\s+/).length : 0;
+  document.getElementById('char-progress').style.width = Math.min(v.length / 50000 * 100, 100) + '%';
+});
+
+function clearInput() {
+  inputEl.value = '';
+  textDocumentInput.value = '';
+  mediaDocumentInput.value = '';
+  textSelectedFileName.textContent = 'No file selected.';
+  mediaSelectedFileName.textContent = 'No file selected.';
+  document.getElementById('char-count').textContent = '0';
+  document.getElementById('word-count').textContent = '0';
+  document.getElementById('char-progress').style.width = '0%';
+}
+
+async function submitSummarize() {
+  const text = inputEl.value.trim();
+  const file = selectedMode === 'text' ? textDocumentInput.files[0] : mediaDocumentInput.files[0];
+  if (selectedMode === 'text' && !file && text.length < 50) { showToast('Please enter at least 50 characters or upload a document.', 'error'); return; }
+  if (selectedMode !== 'text' && !file) { showToast(`Please upload a ${selectedMode} file.`, 'error'); return; }
+
+  const btn = summarizeBtn;
+  const btnText = summarizeBtnText;
+  const spinner = document.getElementById('btn-spinner');
+  btn.disabled = true;
+  btnText.textContent = selectedMode === 'image' ? 'Summarizing image...' : selectedMode === 'video' ? 'Summarizing video...' : 'Summarizing...';
+  spinner.classList.remove('hidden');
+  document.getElementById('result-area').classList.add('hidden');
+
+  try {
+    const requestOptions = file
+      ? (() => {
+          const formData = new FormData();
+          formData.append('summary_type', selectedType);
+          formData.append('document', file);
+          formData.append('input_mode', selectedMode);
+          return { method: 'POST', headers: { 'X-CSRFToken': getCookie('csrftoken') }, body: formData };
+        })()
+      : {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+          body: JSON.stringify({ text, summary_type: selectedType, input_mode: selectedMode })
+        };
+
+    const res = await fetch('{% url "summarize" %}', requestOptions);
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('result-text').textContent = data.summary;
+      document.getElementById('result-type-badge').textContent = SUMMARY_TYPES[data.summary_type] || data.summary_type;
+      document.getElementById('stat-original').textContent = data.word_count_original;
+      document.getElementById('stat-summary').textContent = data.word_count_summary;
+      document.getElementById('stat-ratio').textContent = data.compression_ratio + '%';
+      currentSummaryId = data.summary_id;
+      document.getElementById('view-summary-link').href = '/history/view/' + data.summary_id + '/';
+      document.getElementById('result-area').classList.remove('hidden');
+      if (data.title) {
+        document.getElementById('result-type-badge').textContent = (SUMMARY_TYPES[data.summary_type] || data.summary_type) + ' · ' + data.title;
+      }
+      showToast('Summary generated!', 'success');
+    } else {
+      showToast(data.error || 'An error occurred.', 'error');
+    }
+  } catch (e) {
+    showToast('Network error. Please try again.', 'error');
+  } finally {
+    btn.disabled = false;
+    btnText.textContent = selectedMode === 'image' ? '✦ Summarize Image' : selectedMode === 'video' ? '✦ Summarize Video' : '✦ Summarize';
+    spinner.classList.add('hidden');
+  }
+}
+
+async function submitMcq() {
+  const text = inputEl.value.trim();
+  const file = textDocumentInput.files[0];
+  if (!file && text.length < 50) { showToast('Please enter at least 50 characters or upload a document.', 'error'); return; }
+
+  const btn = mcqBtn;
+  const btnText = document.getElementById('mcq-btn-text');
+  const spinner = document.getElementById('mcq-btn-spinner');
+  btn.disabled = true;
+  btnText.textContent = 'Creating...';
+  spinner.classList.remove('hidden');
+  mcqArea.classList.add('hidden');
+
+  try {
+    const requestOptions = file
+      ? (() => {
+          const formData = new FormData();
+          formData.append('document', file);
+          return { method: 'POST', headers: { 'X-CSRFToken': getCookie('csrftoken') }, body: formData };
+        })()
+      : {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+          body: JSON.stringify({ text })
+        };
+
+    const res = await fetch('{% url "create_mcq" %}', requestOptions);
+    const data = await res.json();
+    if (data.success) {
+      mcqText.textContent = data.mcqs;
+      mcqArea.classList.remove('hidden');
+      showToast('MCQs generated!', 'success');
+    } else {
+      showToast(data.error || 'An error occurred.', 'error');
+    }
+  } catch (e) {
+    showToast('Network error. Please try again.', 'error');
+  } finally {
+    btn.disabled = false;
+    btnText.textContent = 'Create MCQ';
+    spinner.classList.add('hidden');
+  }
+}
+
+function copyMcq() {
+  const text = mcqText.textContent;
+  navigator.clipboard.writeText(text).then(() => showToast('MCQ copied to clipboard!', 'success'));
+}
+
+function copyResult() {
+  const text = document.getElementById('result-text').textContent;
+  navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard!', 'success'));
+}
+
+function downloadResult() {
+  const text = document.getElementById('result-text').textContent;
+  const type = SUMMARY_TYPES[selectedType] || selectedType;
+  const blob = new Blob([`AI Summary (${type})\n${'='.repeat(40)}\n\n${text}\n\nGenerated by AI Summarizer Pro`], { type: 'text/plain' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `summary-${selectedType}-${Date.now()}.txt`; a.click();
+}
+</script>
+{% endblock %}

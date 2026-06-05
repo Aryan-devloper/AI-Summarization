@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}Sign In — AI Summarizer Pro{% endblock %}
+{% block body %}
+<div class="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+  <div class="fixed inset-0 overflow-hidden pointer-events-none">
+    <div class="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] rounded-full bg-blue-200/40 blur-[120px]"></div>
+    <div class="absolute bottom-[-10%] right-[-10%] w-[40vw] h-[40vw] rounded-full bg-cyan-200/40 blur-[100px]"></div>
+  </div>
+  <div class="w-full max-w-md relative z-10 animate-slide-up">
+    <div class="text-center mb-8">
+      <a href="{% url 'home' %}" class="inline-flex items-center gap-3 mb-6">
+        <div class="w-10 h-10 rounded-xl btn-primary flex items-center justify-center font-bold shadow-lg shadow-blue-900/10">✦</div>
+        <span class="font-display font-semibold tracking-tight">AI Summarizer <span class="gradient-text">Pro</span></span>
+      </a>
+      <h1 class="font-display text-2xl font-bold text-slate-900">Welcome back</h1>
+      <p class="text-slate-500 text-sm mt-2">Sign in to your account</p>
+    </div>
+    <div class="glass rounded-2xl p-8 gradient-border">
+      <form method="post" class="space-y-5">
+        {% csrf_token %}
+        {% for field in form %}
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">{{ field.label }}</label>
+          <input type="{{ field.field.widget.input_type }}" name="{{ field.html_name }}" id="{{ field.id_for_label }}"
+            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 placeholder-slate-400 transition-all"
+            placeholder="Enter your {{ field.label|lower }}" {% if field.value %}value="{{ field.value }}"{% endif %} />
+          {% if field.errors %}<p class="text-rose-500 text-xs mt-1.5">{{ field.errors|join:", " }}</p>{% endif %}
+        </div>
+        {% endfor %}
+        {% if form.non_field_errors %}<div class="bg-rose-50 border border-rose-200 rounded-xl p-3 text-rose-600 text-xs">{{ form.non_field_errors|join:", " }}</div>{% endif %}
+        <button type="submit" class="w-full btn-primary font-semibold py-3 rounded-xl text-sm shadow-lg shadow-violet-900/30 mt-2">Sign In</button>
+      </form>
+    </div>
+    <div class="mt-6 flex flex-col gap-2 text-center text-sm text-slate-500">
+      <p>Don't have an account? <a href="{% url 'register' %}" class="text-blue-600 hover:text-blue-700 font-semibold">Create one free</a></p>
+      <a href="{% url 'forgot_password' %}" class="text-slate-500 hover:text-slate-900 transition-colors">Forgot your password?</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: ai-summarizer-pro
+    runtime: python
+    buildCommand: ./build.sh
+    startCommand: gunicorn ai_summarizer.wsgi:application
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: "*"

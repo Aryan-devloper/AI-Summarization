@@ -1,0 +1,140 @@
+{% extends 'base_app.html' %}
+{% block title %}Dashboard — AI Summarizer Pro{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="space-y-6 animate-slide-up">
+  <!-- Welcome Banner -->
+  <div class="relative overflow-hidden rounded-2xl p-6 sm:p-8" style="background: linear-gradient(135deg, rgba(59,130,246,0.10), rgba(14,165,233,0.08), rgba(20,184,166,0.08)); border: 1px solid rgba(191,219,254,0.9);">
+    <div class="absolute top-0 right-0 w-64 h-64 rounded-full bg-blue-200/50 blur-3xl pointer-events-none"></div>
+    <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <p class="text-slate-500 text-sm mb-1">Good day,</p>
+        <h2 class="font-display text-2xl font-bold text-slate-900">{{ request.user.first_name|default:request.user.username }} 👋</h2>
+        <p class="text-slate-500 text-sm mt-1">Ready to summarize something brilliant today?</p>
+      </div>
+      <a href="{% url 'summarize' %}" class="btn-primary px-5 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap shadow-lg shadow-violet-900/30 self-start sm:self-auto">
+        ✦ New Summary
+      </a>
+    </div>
+  </div>
+
+  <!-- Stats Grid -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+    <div class="stat-card glass rounded-2xl p-4 sm:p-5">
+      <div class="flex items-start justify-between mb-3">
+        <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center text-lg">📄</div>
+        <span class="text-xs text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full">Total</span>
+      </div>
+      <p class="font-display text-2xl font-bold text-slate-900">{{ total_summaries }}</p>
+      <p class="text-slate-500 text-xs mt-1">Summaries Created</p>
+    </div>
+    <div class="stat-card glass rounded-2xl p-4 sm:p-5">
+      <div class="flex items-start justify-between mb-3">
+        <div class="w-9 h-9 rounded-xl bg-sky-50 flex items-center justify-center text-lg">📅</div>
+        <span class="text-xs text-sky-600 font-semibold bg-sky-50 px-2 py-0.5 rounded-full">Week</span>
+      </div>
+      <p class="font-display text-2xl font-bold text-slate-900">{{ recent_count }}</p>
+      <p class="text-slate-500 text-xs mt-1">This Week</p>
+    </div>
+    <div class="stat-card glass rounded-2xl p-4 sm:p-5">
+      <div class="flex items-start justify-between mb-3">
+        <div class="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center text-lg">💡</div>
+        <span class="text-xs text-amber-600 font-semibold bg-amber-50 px-2 py-0.5 rounded-full">Saved</span>
+      </div>
+      <p class="font-display text-2xl font-bold text-slate-900">{{ total_words_saved }}</p>
+      <p class="text-slate-500 text-xs mt-1">Words Compressed</p>
+    </div>
+    <div class="stat-card glass rounded-2xl p-4 sm:p-5">
+      <div class="flex items-start justify-between mb-3">
+        <div class="w-9 h-9 rounded-xl bg-rose-50 flex items-center justify-center text-lg">🤖</div>
+        <span class="text-xs text-rose-600 font-semibold bg-rose-50 px-2 py-0.5 rounded-full">AI</span>
+      </div>
+      <p class="font-display text-2xl font-bold text-slate-900">Gemini</p>
+      <p class="text-slate-500 text-xs mt-1">2.5 Flash Model</p>
+    </div>
+  </div>
+
+  <!-- Charts Row -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <!-- Activity Chart -->
+    <div class="lg:col-span-2 glass rounded-2xl p-5">
+      <h3 class="font-display font-semibold text-sm text-slate-900 mb-4">7-Day Activity</h3>
+      <div id="activity-chart" class="flex items-end gap-2 h-28"></div>
+    </div>
+    <!-- Type Distribution -->
+    <div class="glass rounded-2xl p-5">
+      <h3 class="font-display font-semibold text-sm text-slate-900 mb-4">Summary Types</h3>
+      <div id="type-chart" class="space-y-2"></div>
+    </div>
+  </div>
+
+  <!-- Recent Summaries -->
+  <div class="glass rounded-2xl p-5">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-display font-semibold text-sm text-slate-900">Recent Summaries</h3>
+      <a href="{% url 'history' %}" class="text-xs text-blue-600 hover:text-blue-700 transition-colors">View all →</a>
+    </div>
+    {% if recent_summaries %}
+    <div class="space-y-2">
+      {% for summary in recent_summaries %}
+      <a href="{% url 'view_summary' summary.pk %}" class="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors group">
+        <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-sm flex-shrink-0 mt-0.5">
+          {% if summary.summary_type == 'short' %}📝{% elif summary.summary_type == 'medium' %}📋{% elif summary.summary_type == 'detailed' %}📖{% elif summary.summary_type == 'bullets' %}•{% else %}🔑{% endif %}
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm text-slate-800 truncate group-hover:text-slate-900 transition-colors">{{ summary.title|default:"Untitled Summary" }}</p>
+          <p class="text-xs text-slate-500 mt-0.5">{{ summary.get_summary_type_display }} · {{ summary.created_at|date:"M d, Y" }} · {{ summary.word_count_original }} words</p>
+        </div>
+        <span class="text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full flex-shrink-0">{% if summary.compression_ratio > 0 %}-{% endif %}{{ summary.compression_ratio }}%</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-10">
+      <div class="text-4xl mb-3">✦</div>
+      <p class="text-slate-500 text-sm">No summaries yet.</p>
+      <a href="{% url 'summarize' %}" class="btn-primary text-xs font-semibold px-4 py-2 rounded-xl mt-3 inline-block">Create your first</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const dailyCounts = JSON.parse('{{ daily_counts|escapejs }}');
+const typeData = JSON.parse('{{ type_data|escapejs }}');
+const typeColors = { short:'#8b5cf6', medium:'#6366f1', detailed:'#38bdf8', bullets:'#34d399', keypoints:'#fb923c' };
+const typeLabels = { short:'Short', medium:'Medium', detailed:'Detailed', bullets:'Bullets', keypoints:'Key Points' };
+
+// Activity bar chart
+const chart = document.getElementById('activity-chart');
+const maxCount = Math.max(...dailyCounts.map(d => d.count), 1);
+dailyCounts.forEach(d => {
+  const pct = Math.max((d.count / maxCount) * 100, 4);
+  const col = document.createElement('div');
+  col.className = 'flex flex-col items-center gap-1 flex-1';
+  col.innerHTML = `
+    <span class="text-xs text-slate-500">${d.count > 0 ? d.count : ''}</span>
+    <div class="w-full rounded-t-lg bar" style="height:${pct}%; min-height:4px; background: linear-gradient(180deg, #3b82f6, #06b6d4);"></div>
+    <span class="text-xs text-slate-500">${d.day}</span>`;
+  chart.appendChild(col);
+});
+
+// Type distribution
+const typeChart = document.getElementById('type-chart');
+const total = Object.values(typeData).reduce((a, b) => a + b, 0) || 1;
+if (Object.keys(typeData).length === 0) {
+  typeChart.innerHTML = '<p class="text-slate-500 text-xs text-center py-4">No data yet</p>';
+} else {
+  Object.entries(typeData).forEach(([type, count]) => {
+    const pct = Math.round((count / total) * 100);
+    typeChart.innerHTML += `<div>
+      <div class="flex justify-between text-xs mb-1"><span class="text-slate-500">${typeLabels[type]||type}</span><span class="text-slate-500">${count}</span></div>
+      <div class="h-1.5 bg-slate-200 rounded-full overflow-hidden"><div class="h-full rounded-full transition-all" style="width:${pct}%; background:${typeColors[type]||'#3b82f6'};"></div></div>
+    </div>`;
+  });
+}
+</script>
+{% endblock %}

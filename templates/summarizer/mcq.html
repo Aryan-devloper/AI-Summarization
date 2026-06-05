@@ -1,0 +1,636 @@
+{% extends 'base_app.html' %}
+{% block title %}Add MCQ — AI Summarizer Pro{% endblock %}
+{% block page_title %}Add MCQ{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-5 animate-slide-up">
+  <div class="relative overflow-hidden rounded-2xl p-6 sm:p-8 border border-blue-100 bg-gradient-to-r from-white to-blue-50">
+    <div class="absolute top-0 right-0 w-72 h-72 rounded-full bg-blue-200/40 blur-3xl pointer-events-none"></div>
+    <div class="relative z-10 flex flex-col gap-3">
+      <div class="inline-flex items-center gap-2 text-xs text-blue-700 bg-blue-50 border border-blue-100 rounded-full px-3 py-1.5 w-fit">
+        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        Practice mode
+      </div>
+      <h1 class="font-display text-3xl sm:text-4xl font-bold text-slate-900">Create a real-life quiz from any document</h1>
+      <p class="text-slate-600 max-w-2xl">Upload a PDF, DOCX, or TXT file, or paste text, and generate a professional multiple-choice quiz with instant scoring and answer review.</p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+    <div class="lg:col-span-1 glass rounded-2xl p-5 space-y-4">
+      <div>
+        <h2 class="font-display text-sm font-semibold text-slate-900 mb-1">Source content</h2>
+        <p class="text-xs text-slate-500">Upload a document or paste text to build the quiz.</p>
+      </div>
+
+      <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4">
+        <div class="flex flex-col gap-3">
+          <label class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-sm font-semibold text-slate-700 hover:border-blue-300 hover:text-blue-700 transition-colors cursor-pointer">
+            <span>Choose file</span>
+            <input id="document-input" type="file" accept=".pdf,.docx,.txt" class="hidden">
+          </label>
+          <p id="selected-file-name" class="text-xs text-slate-500">No file selected.</p>
+        </div>
+      </div>
+
+      <textarea id="input-text" rows="10" placeholder="Paste text here if you are not uploading a document..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 resize-none transition-all min-h-[220px]"></textarea>
+
+      <button id="generate-btn" onclick="generateQuiz()" class="btn-primary w-full px-6 py-3 rounded-xl text-sm font-semibold shadow-lg shadow-blue-900/10 flex items-center gap-2 justify-center">
+        <span id="generate-btn-text">Generate Quiz</span>
+        <svg id="generate-btn-spinner" class="hidden w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+      </button>
+
+      <div class="text-xs text-slate-500 leading-relaxed bg-slate-50 border border-slate-200 rounded-xl p-3">
+        The quiz is scenario-based and practical, so it feels like a real classroom or exam practice set.
+      </div>
+    </div>
+
+    <div class="lg:col-span-2 space-y-5">
+      <div id="quiz-empty" class="glass rounded-2xl p-8 text-center">
+        <div class="text-4xl mb-3">🧠</div>
+        <h2 class="font-display text-lg font-semibold text-slate-900 mb-2">Your quiz will appear here</h2>
+        <p class="text-slate-500 text-sm">Generate questions to start answering and get a score.</p>
+      </div>
+
+      <!-- Global Voice Assistant Panel -->
+      <div id="voice-assistant-panel" class="hidden glass rounded-2xl p-5 border border-blue-100 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <div class="relative flex-shrink-0">
+              <button id="voice-assistant-btn" onclick="toggleGlobalVoiceAssistant()" class="w-12 h-12 rounded-full flex items-center justify-center text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md group">
+                <span id="voice-assistant-icon" class="text-lg">🎙️</span>
+              </button>
+              <span id="voice-assistant-ring" class="absolute inset-0 rounded-full bg-blue-500/30 scale-100 animate-ping hidden pointer-events-none"></span>
+            </div>
+            <div>
+              <h3 class="font-display text-sm font-semibold text-slate-900 flex items-center gap-2">
+                <span>Voice Assistant Mode</span>
+                <span id="voice-assistant-status-badge" class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-semibold">Idle</span>
+              </h3>
+              <p id="voice-assistant-status-text" class="text-xs text-slate-500 mt-0.5">Click the mic or say commands like "Read question 1" or "Select option A for question 2".</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 self-end sm:self-auto text-xs text-slate-500">
+            <button onclick="speakVoiceHelp()" class="text-blue-600 hover:text-blue-800 transition-colors font-semibold px-2 py-1 rounded hover:bg-blue-50">View Commands</button>
+          </div>
+        </div>
+
+        <div id="voice-help-list" class="hidden mt-4 pt-4 border-t border-blue-100 text-xs text-slate-600 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <p class="font-semibold text-slate-800 mb-1">🎙️ Answer / Navigation Commands:</p>
+            <ul class="list-disc pl-4 space-y-1">
+              <li>"Read question <span class="text-blue-600">1</span>"</li>
+              <li>"Select option <span class="text-blue-600">B</span> for question <span class="text-blue-600">3</span>"</li>
+              <li>"Question <span class="text-blue-600">2</span> is option <span class="text-blue-600">A</span>"</li>
+            </ul>
+          </div>
+          <div>
+            <p class="font-semibold text-slate-800 mb-1">⚡ Solution & Actions:</p>
+            <ul class="list-disc pl-4 space-y-1">
+              <li>"What is the answer to question <span class="text-blue-600">1</span>?"</li>
+              <li>"Explain question <span class="text-blue-600">3</span>"</li>
+              <li>"Submit quiz" / "Check quiz" / "Reset quiz" / "Help"</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div id="quiz-area" class="hidden space-y-4"></div>
+
+      <div id="result-panel" class="hidden glass rounded-2xl p-5 border border-slate-200">
+        <div class="flex items-center justify-between gap-4 mb-4">
+          <div>
+            <h2 class="font-display text-lg font-semibold text-slate-900">Quiz Result</h2>
+            <p class="text-xs text-slate-500 mt-1">Your score and answer review.</p>
+          </div>
+          <div id="score-badge" class="text-sm font-semibold bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full"></div>
+        </div>
+        <div id="result-summary" class="text-sm text-slate-600 mb-4"></div>
+        <div id="review-list" class="space-y-3"></div>
+      </div>
+
+      <div class="flex gap-3 justify-end">
+        <button type="button" onclick="checkQuiz()" class="btn-primary px-5 py-2.5 rounded-xl text-sm font-semibold">Check Result</button>
+        <button type="button" onclick="resetQuiz()" class="px-5 py-2.5 rounded-xl text-sm font-semibold border border-slate-200 text-slate-600 hover:text-slate-900 hover:border-slate-300 bg-white transition-all">Reset</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const documentInput = document.getElementById('document-input');
+const selectedFileName = document.getElementById('selected-file-name');
+const inputEl = document.getElementById('input-text');
+const quizEmpty = document.getElementById('quiz-empty');
+const quizArea = document.getElementById('quiz-area');
+const resultPanel = document.getElementById('result-panel');
+const scoreBadge = document.getElementById('score-badge');
+const resultSummary = document.getElementById('result-summary');
+const reviewList = document.getElementById('review-list');
+let currentQuiz = [];
+
+function normalizeAnswer(value) {
+  return String(value || '').trim().toUpperCase().slice(0, 1);
+}
+
+documentInput.addEventListener('change', () => {
+  const file = documentInput.files[0];
+  selectedFileName.textContent = file ? file.name : 'No file selected.';
+});
+
+function clearQuizResults() {
+  resultPanel.classList.add('hidden');
+  quizArea.innerHTML = '';
+  quizArea.classList.add('hidden');
+  quizEmpty.classList.remove('hidden');
+  currentQuiz = [];
+  
+  // Hide global voice assistant panel and stop it if active
+  const voicePanel = document.getElementById('voice-assistant-panel');
+  if (voicePanel) voicePanel.classList.add('hidden');
+  if (typeof isGlobalVoiceActive !== 'undefined' && isGlobalVoiceActive) {
+    toggleGlobalVoiceAssistant();
+  }
+}
+
+function buildQuiz(questions) {
+  currentQuiz = questions;
+  quizArea.innerHTML = '';
+  
+  // Show global voice assistant panel
+  const voicePanel = document.getElementById('voice-assistant-panel');
+  if (voicePanel) voicePanel.classList.remove('hidden');
+  
+  questions.forEach((item, index) => {
+    const card = document.createElement('div');
+    card.className = 'glass rounded-2xl p-5 border border-slate-200 transition-all duration-300';
+    card.dataset.questionIndex = index;
+    card.innerHTML = `
+      <div class="flex items-start justify-between gap-3 mb-4">
+        <div class="flex-1">
+          <div class="flex items-center gap-2 mb-1">
+            <p class="text-xs font-semibold text-blue-600">Question ${index + 1}</p>
+            <button onclick="speakQuestion(${index})" class="text-slate-400 hover:text-blue-600 transition-colors p-1 rounded hover:bg-slate-100" title="Speak Question & Options">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
+            </button>
+            <button onclick="listenAnswerForQuestion(${index}, this)" class="text-slate-400 hover:text-emerald-600 transition-colors p-1 rounded hover:bg-slate-100 flex items-center justify-center" title="Speak Answer (Say Option A, B, C, or D)">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+            </button>
+          </div>
+          <h3 class="font-display text-base font-semibold text-slate-900">${item.question}</h3>
+        </div>
+        <span class="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-full px-2 py-1 flex-shrink-0">Practice</span>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2" data-options></div>
+      <p class="hidden mt-3 text-sm" data-feedback></p>
+    `;
+
+    const optionsWrap = card.querySelector('[data-options]');
+    ['A', 'B', 'C', 'D'].forEach((letter) => {
+      const option = document.createElement('label');
+      option.className = 'quiz-option block rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 hover:border-blue-300 hover:bg-blue-50 cursor-pointer transition-all';
+      option.innerHTML = `
+        <input type="radio" name="question-${index}" value="${letter}" class="mr-3 accent-blue-600">
+        <span class="font-semibold text-slate-900">${letter}.</span> <span>${item.options[letter] || ''}</span>
+      `;
+      optionsWrap.appendChild(option);
+    });
+
+    quizArea.appendChild(card);
+  });
+  quizEmpty.classList.add('hidden');
+  quizArea.classList.remove('hidden');
+}
+
+async function generateQuiz() {
+  const text = inputEl.value.trim();
+  const file = documentInput.files[0];
+  if (!file && text.length < 50) {
+    showToast('Please enter at least 50 characters or upload a document.', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('generate-btn');
+  const btnText = document.getElementById('generate-btn-text');
+  const spinner = document.getElementById('generate-btn-spinner');
+  btn.disabled = true;
+  btnText.textContent = 'Generating...';
+  spinner.classList.remove('hidden');
+  clearQuizResults();
+
+  try {
+    const requestOptions = file
+      ? (() => {
+          const formData = new FormData();
+          formData.append('document', file);
+          return { method: 'POST', headers: { 'X-CSRFToken': getCookie('csrftoken') }, body: formData };
+        })()
+      : {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+          body: JSON.stringify({ text })
+        };
+
+    const response = await fetch('{% url "generate_mcq_quiz" %}', requestOptions);
+    const data = await response.json();
+    if (data.success) {
+      buildQuiz(data.quiz.questions || []);
+      showToast('Quiz generated!', 'success');
+    } else {
+      showToast(data.error || 'Unable to create quiz.', 'error');
+    }
+  } catch (error) {
+    showToast('Network error. Please try again.', 'error');
+  } finally {
+    btn.disabled = false;
+    btnText.textContent = 'Generate Quiz';
+    spinner.classList.add('hidden');
+  }
+}
+
+function checkQuiz() {
+  if (!currentQuiz.length) return;
+
+  let score = 0;
+  const reviewItems = [];
+
+  currentQuiz.forEach((item, index) => {
+    const selected = document.querySelector(`input[name="question-${index}"]:checked`);
+    const selectedAnswer = selected ? selected.value : '';
+    const correctAnswer = normalizeAnswer(item.correct_answer);
+    const isCorrect = selectedAnswer === correctAnswer;
+    if (isCorrect) score += 1;
+
+    const card = quizArea.querySelector(`[data-question-index="${index}"]`);
+    const feedback = card.querySelector('[data-feedback]');
+    feedback.classList.remove('hidden');
+    feedback.className = `mt-3 text-sm ${isCorrect ? 'text-emerald-600' : 'text-rose-600'}`;
+    feedback.textContent = isCorrect
+      ? 'Correct answer. Well done.'
+      : `Correct answer: ${correctAnswer}. ${item.explanation ? item.explanation : ''}`;
+
+    reviewItems.push({
+      number: index + 1,
+      question: item.question,
+      selected: selectedAnswer || 'No answer',
+      correct: correctAnswer,
+      explanation: item.explanation || ''
+    });
+  });
+
+  scoreBadge.textContent = `${score}/${currentQuiz.length}`;
+  resultSummary.textContent = `You answered ${score} out of ${currentQuiz.length} questions correctly.`;
+  reviewList.innerHTML = reviewItems.map((item) => `
+    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+      <div class="flex items-center justify-between gap-3 mb-2">
+        <p class="text-sm font-semibold text-slate-900">Q${item.number}. ${item.question}</p>
+        <span class="text-xs ${item.selected === item.correct ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50'} px-2 py-1 rounded-full">
+          ${item.selected === item.correct ? 'Correct' : 'Review'}
+        </span>
+      </div>
+      <p class="text-xs text-slate-500">Your answer: ${item.selected} · Correct answer: ${item.correct}</p>
+      ${item.explanation ? `<p class="text-xs text-slate-500 mt-2">${item.explanation}</p>` : ''}
+    </div>
+  `).join('');
+  resultPanel.classList.remove('hidden');
+  showToast(`Score: ${score}/${currentQuiz.length}`, score === currentQuiz.length ? 'success' : 'info');
+}
+
+function resetQuiz() {
+  documentInput.value = '';
+  selectedFileName.textContent = 'No file selected.';
+  inputEl.value = '';
+  clearQuizResults();
+}
+
+// Voice Assistant JavaScript Code
+let activeQuestionRecognizer = null;
+let globalRecognizer = null;
+let isGlobalVoiceActive = false;
+
+function speakText(text, callback) {
+  if ('speechSynthesis' in window) {
+    // Temporarily pause global listener to avoid hearing our own speech
+    let wasGlobalActive = isGlobalVoiceActive;
+    if (wasGlobalActive && globalRecognizer) {
+      try {
+        globalRecognizer.abort();
+      } catch(e) {}
+    }
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    
+    const onEndHandler = () => {
+      if (callback) callback();
+      if (wasGlobalActive && isGlobalVoiceActive) {
+        startListeningGlobal();
+      }
+    };
+    
+    utterance.onend = onEndHandler;
+    utterance.onerror = onEndHandler;
+    
+    window.speechSynthesis.speak(utterance);
+  } else if (callback) {
+    callback();
+  }
+}
+
+function speakQuestion(index) {
+  if (!currentQuiz || !currentQuiz[index]) return;
+  const item = currentQuiz[index];
+  let text = `Question ${index + 1}: ${item.question}. `;
+  text += `Option A: ${item.options.A}. `;
+  text += `Option B: ${item.options.B}. `;
+  text += `Option C: ${item.options.C}. `;
+  text += `Option D: ${item.options.D}. `;
+  
+  const card = quizArea.querySelector(`[data-question-index="${index}"]`);
+  if (card) {
+    card.classList.add('ring-2', 'ring-blue-500');
+    speakText(text, () => {
+      card.classList.remove('ring-2', 'ring-blue-500');
+    });
+  } else {
+    speakText(text);
+  }
+}
+
+function listenAnswerForQuestion(index, btn) {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    showToast('Speech Recognition is not supported in this browser. Please use Chrome/Edge.', 'error');
+    return;
+  }
+  
+  if (activeQuestionRecognizer) {
+    activeQuestionRecognizer.abort();
+  }
+
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+  }
+
+  const recognition = new SpeechRecognition();
+  activeQuestionRecognizer = recognition;
+  recognition.lang = 'en-US';
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  btn.classList.add('text-rose-500', 'animate-pulse');
+  btn.classList.remove('text-slate-400');
+  
+  recognition.onstart = () => {
+    showToast(`Listening for Question ${index + 1} answer...`, 'info');
+  };
+
+  recognition.onresult = (event) => {
+    const speechResult = event.results[0][0].transcript.toLowerCase().trim();
+    console.log('Spoken Answer:', speechResult);
+    
+    let selectedOption = null;
+    if (speechResult.includes('option a') || speechResult === 'a' || speechResult.startsWith('a ') || speechResult.endsWith(' a')) {
+      selectedOption = 'A';
+    } else if (speechResult.includes('option b') || speechResult === 'b' || speechResult.startsWith('b ') || speechResult.endsWith(' b') || speechResult === 'be') {
+      selectedOption = 'B';
+    } else if (speechResult.includes('option c') || speechResult === 'c' || speechResult.startsWith('c ') || speechResult.endsWith(' c') || speechResult === 'see') {
+      selectedOption = 'C';
+    } else if (speechResult.includes('option d') || speechResult === 'd' || speechResult.startsWith('d ') || speechResult.endsWith(' d') || speechResult === 'de') {
+      selectedOption = 'D';
+    }
+    
+    if (selectedOption) {
+      const radio = quizArea.querySelector(`input[name="question-${index}"][value="${selectedOption}"]`);
+      if (radio) {
+        radio.checked = true;
+        speakText(`Selected option ${selectedOption} for question ${index + 1}`);
+        showToast(`Selected option ${selectedOption} for Question ${index + 1}`, 'success');
+      }
+    } else {
+      speakText("Sorry, I didn't recognize that option. Please say Option A, B, C, or D.");
+      showToast(`Didn't recognize option in: "${speechResult}"`, 'error');
+    }
+  };
+
+  recognition.onerror = (event) => {
+    console.error('Speech recognition error', event.error);
+    if (event.error !== 'aborted') {
+      showToast('Error recognizing speech. Please try again.', 'error');
+    }
+  };
+
+  recognition.onend = () => {
+    btn.classList.remove('text-rose-500', 'animate-pulse');
+    btn.classList.add('text-slate-400');
+    activeQuestionRecognizer = null;
+  };
+
+  recognition.start();
+}
+
+function toggleGlobalVoiceAssistant() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    showToast('Speech Recognition is not supported in this browser. Please use Chrome/Edge.', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('voice-assistant-btn');
+  const ring = document.getElementById('voice-assistant-ring');
+  const badge = document.getElementById('voice-assistant-status-badge');
+  const statusText = document.getElementById('voice-assistant-status-text');
+
+  if (isGlobalVoiceActive) {
+    isGlobalVoiceActive = false;
+    if (globalRecognizer) {
+      try {
+        globalRecognizer.stop();
+      } catch(e) {}
+    }
+    btn.classList.remove('from-rose-600', 'to-red-600');
+    btn.classList.add('from-blue-600', 'to-indigo-600');
+    ring.classList.add('hidden');
+    badge.textContent = 'Idle';
+    badge.className = 'text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-semibold';
+    statusText.textContent = 'Voice Assistant stopped.';
+    speakText('Voice Assistant deactivated.');
+    return;
+  }
+
+  isGlobalVoiceActive = true;
+  btn.classList.remove('from-blue-600', 'to-indigo-600');
+  btn.classList.add('from-rose-600', 'to-red-600');
+  ring.classList.remove('hidden');
+  badge.textContent = 'Listening';
+  badge.className = 'text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold animate-pulse';
+  statusText.textContent = 'Listening for your commands...';
+
+  speakText('Voice Assistant activated. Say a command, or say Help to list commands.', () => {
+    if (isGlobalVoiceActive) {
+      startListeningGlobal();
+    }
+  });
+}
+
+function startListeningGlobal() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!isGlobalVoiceActive || !SpeechRecognition) return;
+
+  globalRecognizer = new SpeechRecognition();
+  globalRecognizer.lang = 'en-US';
+  globalRecognizer.interimResults = false;
+  globalRecognizer.maxAlternatives = 1;
+
+  globalRecognizer.onresult = (event) => {
+    const speechResult = event.results[0][0].transcript.toLowerCase().trim();
+    const statusText = document.getElementById('voice-assistant-status-text');
+    statusText.innerHTML = `I heard: <strong class="text-slate-800">"${speechResult}"</strong>`;
+    
+    processGlobalCommand(speechResult);
+  };
+
+  globalRecognizer.onerror = (event) => {
+    console.error('Global speech recognition error:', event.error);
+    if (event.error !== 'no-speech' && event.error !== 'aborted') {
+      const badge = document.getElementById('voice-assistant-status-badge');
+      if (badge) badge.textContent = 'Error';
+    }
+  };
+
+  globalRecognizer.onend = () => {
+    if (isGlobalVoiceActive) {
+      setTimeout(() => {
+        if (isGlobalVoiceActive && (!window.speechSynthesis || !window.speechSynthesis.speaking)) {
+          try {
+            globalRecognizer.start();
+          } catch(e) {}
+        }
+      }, 400);
+    }
+  };
+
+  try {
+    globalRecognizer.start();
+  } catch(e) {}
+}
+
+function processGlobalCommand(speechText) {
+  if (speechText.includes('help') || speechText.includes('commands') || speechText === 'what can i say') {
+    speakVoiceHelp();
+    return;
+  }
+
+  if (speechText.includes('submit') || speechText.includes('check result') || speechText.includes('check quiz') || speechText.includes('check answers')) {
+    speakText('Checking quiz answers now.');
+    checkQuiz();
+    return;
+  }
+
+  if (speechText.includes('reset') || speechText.includes('restart') || speechText.includes('clear')) {
+    speakText('Resetting the quiz.');
+    resetQuiz();
+    return;
+  }
+
+  const readMatch = speechText.match(/(?:read|tell me|ask|say)\s+question\s+(?:number\s+)?(\d+|one|two|three|four|five|six|seven|eight|nine|ten)/i);
+  if (readMatch) {
+    const num = parseNumberWord(readMatch[1]);
+    if (num > 0 && num <= currentQuiz.length) {
+      speakQuestion(num - 1);
+    } else {
+      speakText(`Sorry, I couldn't find question ${readMatch[1]}`);
+    }
+    return;
+  }
+
+  const explainMatch = speechText.match(/(?:explain|explanation for)\s+question\s+(?:number\s+)?(\d+|one|two|three|four|five|six|seven|eight|nine|ten)/i);
+  if (explainMatch) {
+    const num = parseNumberWord(explainMatch[1]);
+    if (num > 0 && num <= currentQuiz.length) {
+      const item = currentQuiz[num - 1];
+      if (item.explanation) {
+        speakText(`Explanation for question ${num}: ${item.explanation}`);
+      } else {
+        speakText(`For question ${num}, the correct answer is option ${item.correct_answer}.`);
+      }
+    } else {
+      speakText(`Sorry, I couldn't find question ${explainMatch[1]}`);
+    }
+    return;
+  }
+
+  const ansMatch = speechText.match(/(?:answer|correct answer|solution)\s+(?:for|to|of)\s+question\s+(?:number\s+)?(\d+|one|two|three|four|five|six|seven|eight|nine|ten)/i) ||
+                   speechText.match(/what is the answer (?:for|to|of)\s+question\s+(?:number\s+)?(\d+|one|two|three|four|five|six|seven|eight|nine|ten)/i);
+  if (ansMatch) {
+    const num = parseNumberWord(ansMatch[1]);
+    if (num > 0 && num <= currentQuiz.length) {
+      const item = currentQuiz[num - 1];
+      const optLetter = item.correct_answer;
+      const optText = item.options[optLetter];
+      speakText(`The correct answer to question ${num} is option ${optLetter}: ${optText}`);
+    } else {
+      speakText(`Sorry, I couldn't find question ${ansMatch[1]}`);
+    }
+    return;
+  }
+
+  const selectMatch = speechText.match(/(?:select|choose|pick|answer|set)\s+(?:option\s+)?([a-d])\s+(?:for|to|in)\s+question\s+(?:number\s+)?(\d+|one|two|three|four|five|six|seven|eight|nine|ten)/i) ||
+                      speechText.match(/question\s+(?:number\s+)?(\d+|one|two|three|four|five|six|seven|eight|nine|ten)\s+(?:is|select|option)\s+([a-d])/i);
+  if (selectMatch) {
+    let optionLetter, questionTerm;
+    if (isNaN(parseInt(selectMatch[1])) && selectMatch[1].match(/[a-d]/i)) {
+      optionLetter = selectMatch[1].toUpperCase();
+      questionTerm = selectMatch[2];
+    } else {
+      questionTerm = selectMatch[1];
+      optionLetter = selectMatch[2].toUpperCase();
+    }
+    const num = parseNumberWord(questionTerm);
+    if (num > 0 && num <= currentQuiz.length) {
+      const radio = quizArea.querySelector(`input[name="question-${num-1}"][value="${optionLetter}"]`);
+      if (radio) {
+        radio.checked = true;
+        speakText(`Selected option ${optionLetter} for question ${num}`);
+      } else {
+        speakText(`Sorry, I couldn't select that option.`);
+      }
+    } else {
+      speakText(`Sorry, I couldn't find question ${questionTerm}`);
+    }
+    return;
+  }
+
+  speakText("Sorry, I didn't get that command. Say Help to see the list of commands.");
+}
+
+function parseNumberWord(word) {
+  const num = parseInt(word);
+  if (!isNaN(num)) return num;
+  
+  const map = {
+    'one': 1, '1': 1,
+    'two': 2, '2': 2, 'to': 2, 'too': 2,
+    'three': 3, '3': 3, 'tree': 3,
+    'four': 4, '4': 4, 'for': 4,
+    'five': 5, '5': 5,
+    'six': 6, '6': 6,
+    'seven': 7, '7': 7,
+    'eight': 8, '8': 8, 'ate': 8,
+    'nine': 9, '9': 9,
+    'ten': 10, '10': 10
+  };
+  return map[word.trim().toLowerCase()] || 0;
+}
+
+function speakVoiceHelp() {
+  const helpList = document.getElementById('voice-help-list');
+  if (helpList) helpList.classList.toggle('hidden');
+  
+  const helpText = "Here are the voice commands: Speak 'Read question 1' to read the first question. Speak 'Select option A for question 1' to choose an answer. Speak 'What is the answer to question 1' to get the correct option. Speak 'Explain question 1' to hear the explanation. Speak 'Submit quiz' or 'Reset quiz' to perform those actions.";
+  speakText(helpText);
+}
+</script>
+{% endblock %}

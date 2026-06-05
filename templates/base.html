@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}AI Summarizer Pro{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['DM Sans', 'sans-serif'],
+            display: ['Space Grotesk', 'sans-serif'],
+          },
+          colors: {
+            zinc: {
+              925: '#111827',
+              950: '#0f172a',
+            }
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.3s ease-out',
+            'slide-up': 'slideUp 0.4s ease-out',
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4,0,0.6,1) infinite',
+          },
+          keyframes: {
+            fadeIn: { from: { opacity: '0' }, to: { opacity: '1' } },
+            slideUp: { from: { opacity: '0', transform: 'translateY(16px)' }, to: { opacity: '1', transform: 'translateY(0)' } },
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'DM Sans', sans-serif; background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%); color: #0f172a; }
+    .font-display { font-family: 'Space Grotesk', sans-serif; }
+    .glass { background: rgba(255,255,255,0.78); backdrop-filter: blur(14px); border: 1px solid rgba(148,163,184,0.18); box-shadow: 0 16px 40px rgba(15,23,42,0.06); }
+    .glass-hover:hover { background: rgba(255,255,255,0.92); }
+    .gradient-text { background: linear-gradient(135deg, #2563eb, #0ea5e9, #14b8a6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .gradient-border { border: 1px solid transparent; background: linear-gradient(#ffffff, #ffffff) padding-box, linear-gradient(135deg, #93c5fd55, #67e8f955) border-box; }
+    .btn-primary { background: linear-gradient(135deg, #2563eb, #0ea5e9); transition: all 0.2s; color: #fff; }
+    .btn-primary:hover { background: linear-gradient(135deg, #1d4ed8, #0284c7); transform: translateY(-1px); box-shadow: 0 10px 24px rgba(37,99,235,0.18); }
+    .sidebar-link { transition: all 0.2s; }
+    .sidebar-link.active, .sidebar-link:hover { background: rgba(59,130,246,0.08); color: #2563eb; }
+    .sidebar-link.active { border-left: 2px solid #2563eb; }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: #e2e8f0; }
+    ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 99px; }
+    .toast { animation: slideUp 0.3s ease-out; }
+    textarea:focus, input:focus, select:focus { outline: none; border-color: #2563eb !important; box-shadow: 0 0 0 3px rgba(37,99,235,0.12); }
+    .stat-card { background: linear-gradient(135deg, rgba(59,130,246,0.07), rgba(14,165,233,0.05)); }
+    .bar { transition: height 0.6s ease-out; }
+    @media (max-width: 768px) { .sidebar-mobile { transform: translateX(-100%); transition: transform 0.3s; position: fixed; z-index: 50; height: 100vh; } .sidebar-mobile.open { transform: translateX(0); } }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="text-slate-900 min-h-screen">
+
+{% if messages %}
+  <div id="toast-container" class="fixed top-4 right-4 z-[100] flex flex-col gap-2">
+  {% for message in messages %}
+  <div class="toast glass rounded-xl px-4 py-3 flex items-center gap-3 min-w-[280px] shadow-xl border
+    {% if message.tags == 'error' %}border-rose-200 bg-rose-50{% elif message.tags == 'success' %}border-emerald-200 bg-emerald-50{% else %}border-slate-200 bg-white{% endif %}">
+    <span class="text-lg">{% if message.tags == 'error' %}⚠️{% elif message.tags == 'success' %}✅{% else %}ℹ️{% endif %}</span>
+    <span class="text-sm text-slate-700">{{ message }}</span>
+    <button onclick="this.parentElement.remove()" class="ml-auto text-slate-400 hover:text-slate-700">✕</button>
+  </div>
+  {% endfor %}
+</div>
+<script>setTimeout(() => { const tc = document.getElementById('toast-container'); if(tc) tc.innerHTML = ''; }, 5000);</script>
+{% endif %}
+
+{% block body %}{% endblock %}
+
+<script>
+function showToast(msg, type='info') {
+  const colors = { success:'border-emerald-200 bg-emerald-50', error:'border-rose-200 bg-rose-50', info:'border-slate-200 bg-white' };
+  const icons = { success:'✅', error:'⚠️', info:'ℹ️' };
+  let tc = document.getElementById('toast-container');
+  if (!tc) { tc = document.createElement('div'); tc.id='toast-container'; tc.className='fixed top-4 right-4 z-[100] flex flex-col gap-2'; document.body.appendChild(tc); }
+  const div = document.createElement('div');
+  div.className = `toast glass rounded-xl px-4 py-3 flex items-center gap-3 min-w-[280px] shadow-2xl border ${colors[type]||colors.info}`;
+  div.innerHTML = `<span>${icons[type]||icons.info}</span><span class="text-sm text-slate-700">${msg}</span><button onclick="this.parentElement.remove()" class="ml-auto text-slate-400 hover:text-slate-700">✕</button>`;
+  tc.appendChild(div);
+  setTimeout(() => div.remove(), 5000);
+}
+function getCookie(name) {
+  let v = null;
+  document.cookie.split(';').forEach(c => { c=c.trim(); if(c.startsWith(name+'=')) v=decodeURIComponent(c.slice(name.length+1)); });
+  return v;
+}
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

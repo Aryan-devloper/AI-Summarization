@@ -1,0 +1,70 @@
+{% extends 'base_app.html' %}
+{% block title %}View Summary — AI Summarizer Pro{% endblock %}
+{% block page_title %}View Summary{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-5 animate-slide-up">
+  <div class="flex items-center gap-3">
+    <a href="{% url 'history' %}" class="text-slate-500 hover:text-slate-900 transition-colors text-sm">← History</a>
+    <span class="text-slate-300">/</span>
+    <span class="text-slate-500 text-sm">{{ summary.get_summary_type_display }}</span>
+  </div>
+  <div class="glass rounded-2xl p-6 gradient-border">
+    <div class="flex items-start justify-between gap-4 mb-5">
+      <div>
+        <h2 class="font-display font-bold text-lg text-slate-900">{{ summary.title|default:"Summary" }}</h2>
+        <div class="flex items-center gap-3 mt-2">
+          <span class="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-semibold">{{ summary.get_summary_type_display }}</span>
+          <span class="text-xs text-slate-500">{{ summary.created_at|date:"M d, Y · H:i" }}</span>
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="copyResult()" class="p-2 rounded-xl glass hover:bg-slate-100 transition-all text-slate-500 hover:text-slate-900">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+        </button>
+        <button onclick="downloadResult()" class="p-2 rounded-xl glass hover:bg-slate-100 transition-all text-slate-500 hover:text-slate-900">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+        </button>
+      </div>
+    </div>
+    <!-- Stats -->
+    <div class="grid grid-cols-3 gap-3 mb-5">
+      <div class="bg-slate-50 rounded-xl p-3 text-center border border-slate-200">
+        <p class="font-display text-xl font-bold text-slate-900">{{ summary.word_count_original }}</p>
+        <p class="text-slate-500 text-xs mt-0.5">Original Words</p>
+      </div>
+      <div class="bg-slate-50 rounded-xl p-3 text-center border border-slate-200">
+        <p class="font-display text-xl font-bold text-slate-900">{{ summary.word_count_summary }}</p>
+        <p class="text-slate-500 text-xs mt-0.5">Summary Words</p>
+      </div>
+      <div class="bg-slate-50 rounded-xl p-3 text-center border border-slate-200">
+        <p class="font-display text-xl font-bold text-emerald-600">{{ summary.compression_ratio }}%</p>
+        <p class="text-slate-500 text-xs mt-0.5">Compressed</p>
+      </div>
+    </div>
+    <!-- Summary -->
+    <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+      <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Summary</p>
+      <div id="summary-text" class="text-slate-700 text-sm leading-relaxed whitespace-pre-wrap">{{ summary.summary }}</div>
+    </div>
+  </div>
+  <!-- Original Text -->
+  <details class="glass rounded-2xl p-5">
+    <summary class="font-display font-semibold text-sm text-slate-500 cursor-pointer hover:text-slate-900 transition-colors">Show Original Text</summary>
+    <div class="mt-4 bg-slate-50 rounded-xl p-4 border border-slate-200">
+      <p class="text-slate-500 text-sm leading-relaxed whitespace-pre-wrap">{{ summary.original_text }}</p>
+    </div>
+  </details>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+function copyResult() {
+  navigator.clipboard.writeText(document.getElementById('summary-text').textContent).then(() => showToast('Copied!', 'success'));
+}
+function downloadResult() {
+  const text = document.getElementById('summary-text').textContent;
+  const blob = new Blob([text], { type: 'text/plain' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'summary-{{ summary.pk }}.txt'; a.click();
+}
+</script>
+{% endblock %}
