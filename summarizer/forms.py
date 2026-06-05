@@ -5,6 +5,7 @@ from .models import UserProfile, SUMMARY_TYPES
 
 
 class RegisterForm(UserCreationForm):
+    usable_password = None
     email = forms.EmailField(required=True)
     first_name = forms.CharField(max_length=50, required=False)
     last_name = forms.CharField(max_length=50, required=False)
