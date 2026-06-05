@@ -3,7 +3,7 @@ services:
     name: ai-summarizer-pro
     runtime: python
     buildCommand: ./build.sh
-    startCommand: gunicorn ai_summarizer.wsgi:application
+    startCommand: python manage.py migrate && gunicorn ai_summarizer.wsgi:application
     envVars:
       - key: GEMINI_API_KEY
         sync: false
