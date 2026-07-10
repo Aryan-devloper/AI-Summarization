@@ -69,7 +69,16 @@ class ForgotPasswordRequestForm(forms.Form):
 
 
 class ForgotPasswordOTPForm(forms.Form):
-    otp = forms.CharField(max_length=6, min_length=6)
+    otp = forms.CharField(max_length=15, min_length=6)
+
+    def clean_otp(self):
+        otp = self.cleaned_data.get('otp', '').strip()
+        # Extract only digits (removes spaces, dashes, newlines, etc.)
+        digits = ''.join(c for c in otp if c.isdigit())
+        if len(digits) != 6:
+            raise forms.ValidationError('Please enter a valid 6-digit verification code.')
+        return digits
+
 
 
 class SetNewPasswordForm(forms.Form):

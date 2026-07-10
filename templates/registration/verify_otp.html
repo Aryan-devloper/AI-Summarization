@@ -16,7 +16,7 @@
         {% csrf_token %}
         <div>
           <label class="block text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">6-digit code</label>
-          <input type="text" name="otp" maxlength="6" inputmode="numeric" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 placeholder-slate-400 transition-all tracking-[0.3em] text-center" placeholder="123456" />
+          <input type="text" name="otp" maxlength="15" inputmode="numeric" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 placeholder-slate-400 transition-all tracking-[0.3em] text-center" placeholder="123456" />
           {% if form.otp.errors %}<p class="text-rose-500 text-xs mt-1.5">{{ form.otp.errors|join:", " }}</p>{% endif %}
         </div>
         <button type="submit" class="w-full btn-primary font-semibold py-3 rounded-xl text-sm shadow-lg shadow-blue-900/10">Verify Code</button>
@@ -25,3 +25,24 @@
   </div>
 </div>
 {% endblock %}
+
+{% block extra_js %}
+<script>
+  const otpInput = document.querySelector('input[name="otp"]');
+  if (otpInput) {
+    // Clean input and paste to strip whitespace, dashes, and letters
+    const cleanInput = (val) => val.replace(/\D/g, '').substring(0, 6);
+    
+    otpInput.addEventListener('input', function() {
+      this.value = cleanInput(this.value);
+    });
+    
+    otpInput.addEventListener('paste', function() {
+      setTimeout(() => {
+        this.value = cleanInput(this.value);
+      }, 0);
+    });
+  }
+</script>
+{% endblock %}
+
